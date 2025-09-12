@@ -83,13 +83,15 @@
 (comment
 
   (show-svg! (ds/vega-spec->svg (slurp (io/resource "bar.vg.json"))))
-  (def inst (make-svg-window {:title "Stacked"}))
-  (show-svg! inst (ds/vega-spec->svg (slurp (io/resource "stacked.bar.vg.json"))))
 
-  (keep-on-top! inst)
+  (def plot1 (make-svg-window {:title "Stacked"}))
+  (show-svg! plot1 (ds/vega-spec->svg (slurp (io/resource "stacked.bar.vg.json"))))
 
+  (keep-on-top! plot1)
+
+  (def plot2 (make-svg-window {:title "Stacked"}))
   (plot-vega-lite!
-   inst
+   plot2
    {:data {:values (map hash-map
                         (repeat :a)
                         (range 1 1000)
@@ -99,7 +101,9 @@
     :width 800
     :height 600
     :encoding {:x {:field :a, :type "ordinal", :axis {"labelAngle" 0}},
-               :y {:field :b, :type "quantitative"}}}))
+               :y {:field :b, :type "quantitative"}}})
+
+  :end)
 
 ;;(.requestToggleFullScreen (com.apple.eawt.Application/getApplication) @the-frame)
 

@@ -8,18 +8,27 @@ and Vega-lite graphs from the Clojure REPL.
 We have not yet released to Clojars, so we recommended you use deps.edn:
 
 ``` clojure
-applied-science/hubble {:git/url "https://github.com/appliedsciencestudio/hubble/"
-                        :sha "50db98e70344905777c5df9e98a6b029cfdc8481"}
+applied-science/hubble {:git/url "https://github.com/vladkotu/hubble"
+                        :sha "a541bda15464cc2b2f77e56863a172828b0d7808"}
 ```
 
 ## Usage
 
-``` clojure
+```clojure
 (ns test
-  (:require [applied-science.hubble :refer [plot-vega-lite! keep-on-top!]]))
+  (:require [applied-science.hubble :as ah]))
 
 ;; pops up a window containing this visualization
-(plot-vega-lite!
+(show-svg! (ds/vega-spec->svg (slurp (io/resource "bar.vg.json"))))
+
+  (def plot1 (make-svg-window {:title "Stacked"}))
+  (show-svg! plot1 (ds/vega-spec->svg (slurp (io/resource "stacked.bar.vg.json"))))
+
+  (keep-on-top! plot1)
+
+  (def plot2 (make-svg-window {:title "Stacked"}))
+  (plot-vega-lite!
+   plot2
    {:data {:values (map hash-map
                         (repeat :a)
                         (range 1 1000)
@@ -30,11 +39,6 @@ applied-science/hubble {:git/url "https://github.com/appliedsciencestudio/hubble
     :height 600
     :encoding {:x {:field :a, :type "ordinal", :axis {"labelAngle" 0}},
                :y {:field :b, :type "quantitative"}}})
-
-;; tells hubble to float on top of other windows, especially useful if
-;; one is running a full screen editor but they still want to see the
-;; current plot
-(keep-on-top!)
 ```
 
 ## TODO
