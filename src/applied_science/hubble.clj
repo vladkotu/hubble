@@ -1,54 +1,95 @@
 (ns applied-science.hubble
-  (:require [seesaw.core :refer :all]
+  (:require [seesaw.core :as see]
             [jsonista.core :as json]
-            [applied-science.darkstar :as ds]))
+            [applied-science.darkstar :as ds]
+            [clojure.java.io :as io]))
 
-;; TODO factor out Seesaw, which we are hardly using.
+(set! *warn-on-reflection* true)
 
-(native!)
+(defn make-canvas [] (org.apache.batik.swing.JSVGCanvas.))
 
-(def svg-canvas
-  (org.apache.batik.swing.JSVGCanvas.))
+(defprotocol ISvgWindow
+  (id [_])
+  (frame [_])
+  (canvas [_]))
 
-(defonce the-frame
-  (let [f (-> (frame :title "Hubble"
-                     :content (scrollable svg-canvas))
-              pack!)]
-    ;; enables fullscreen, which also enables split screen
-    (when (.startsWith (System/getProperty "os.name") "Mac OS X")
-      (try
-        (com.apple.eawt.FullScreenUtilities/setWindowCanFullScreen f true)  
-        (catch Exception e (println e))))
-    f))
+(defrecord SvgWindow [frame canvas]
+  ISvgWindow
+  (frame [_] frame)
+  (canvas [_] canvas)
+  (id [_] id))
 
-(defn show-svg! [svg]
-  (.setSVGDocument svg-canvas
-                   (.createDocument (org.apache.batik.anim.dom.SAXSVGDocumentFactory.
-                                     (org.apache.batik.util.XMLResourceDescriptor/getXMLParserClassName))
-                                    "" ;; TODO take path arg
-                                    (java.io.StringReader. svg)))
-  (show! the-frame))
+(def frame-defaults {:title "svg" :id (str (java.util.UUID/randomUUID))})
+(defn make-svg-window
+  ([] (make-svg-window frame-defaults))
+  ([{:as opts}]
+   (let [opts (merge frame-defaults opts)
+         canvas (make-canvas)
+         frame (->> (assoc opts :content (see/scrollable canvas))
+                    (apply concat)
+                    (apply see/frame)
+                    (see/pack!))]
+     (map->SvgWindow {:id (:id opts)
+                      :frame frame
+                      :canvas canvas}))))
 
-(defn keep-on-top! []
-  (doto the-frame
-    (.setVisible true)
-    (.toFront)
-    (.repaint) 
-    (.setAlwaysOnTop true)))
+(def default-svg-window-inst nil)
 
-(defn plot-vega! [spec]
-  (show-svg! (ds/vega-spec->svg (json/write-value-as-string spec))))
+(defn default-inst
+  []
+  (when-not default-svg-window-inst
+    (let [inst (make-svg-window {:id :default :title "SVG"})]
+      (alter-var-root #'default-svg-window-inst (constantly inst))))
+  default-svg-window-inst)
 
-(defn plot-vega-lite! [spec]
-  (show-svg! (ds/vega-lite-spec->svg (json/write-value-as-string spec))))
+(defn show-svg!
+  ([svg-str] (show-svg! (default-inst) svg-str))
+  ([inst svg-str]
+   (let [svg-canvas   ^org.apache.batik.swing.JSVGCanvas (canvas inst)
+         parser-class  (org.apache.batik.util.XMLResourceDescriptor/getXMLParserClassName)
+         doc-factory   (org.apache.batik.anim.dom.SAXSVGDocumentFactory. parser-class)
+         string-reader (java.io.StringReader. svg-str)
+         svg-document (.createDocument doc-factory "" string-reader)]
+     (.setSVGDocument svg-canvas svg-document)
+     (see/show! (frame inst)))))
+
+(defn keep-on-top!
+  ([] (keep-on-top! (default-inst)))
+  ([inst]
+   (doto ^javax.swing.JFrame (frame inst)
+     (.setVisible true)
+     (.toFront)
+     (.repaint)
+     (.setAlwaysOnTop true))))
+
+(defn plot-vega!
+  ([spec] (plot-vega! (default-inst) spec))
+  ([inst spec]
+   (show-svg! inst (ds/vega-spec->svg (json/write-value-as-string spec)))
+   (keep-on-top! inst)))
+
+(defn plot-vega-lite!
+  ([spec] (plot-vega-lite! (default-inst) spec))
+  ([inst spec]
+   (show-svg! inst (ds/vega-lite-spec->svg (json/write-value-as-string spec)))
+   (keep-on-top! inst)))
+
+(defn spit-vega! [fpath spec]
+  (spit fpath (ds/vega-spec->svg (json/write-value-as-string spec))))
+
+(defn spit-vega-lite! [fpath spec]
+  (spit fpath (ds/vega-lite-spec->svg (json/write-value-as-string spec))))
 
 (comment
 
-  (show-svg! (ds/vega-lite-spec->svg (slurp "/Users/jack/src/darkstar/vega-lite-example.json")))
+  (show-svg! (ds/vega-spec->svg (slurp (io/resource "bar.vg.json"))))
+  (def inst (make-svg-window {:title "Stacked"}))
+  (show-svg! inst (ds/vega-spec->svg (slurp (io/resource "stacked.bar.vg.json"))))
 
-  (keep-on-top!)
+  (keep-on-top! inst)
 
   (plot-vega-lite!
+   inst
    {:data {:values (map hash-map
                         (repeat :a)
                         (range 1 1000)
@@ -58,9 +99,7 @@
     :width 800
     :height 600
     :encoding {:x {:field :a, :type "ordinal", :axis {"labelAngle" 0}},
-               :y {:field :b, :type "quantitative"}}})
-
-  )
+               :y {:field :b, :type "quantitative"}}}))
 
 ;;(.requestToggleFullScreen (com.apple.eawt.Application/getApplication) @the-frame)
 

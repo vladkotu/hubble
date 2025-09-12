@@ -1,0 +1,12 @@
+*.log
+node_modules
+.DS_Store
+.nyc_output
+coverage
+tmp
+.clj-kondo
+.cljs_node_repl
+.cpcache
+.lsp
+.shadow-cljs
+.nrepl-port
