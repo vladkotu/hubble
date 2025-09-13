@@ -1,4 +1,36 @@
 (ns applied-science.hubble
+  "
+(ns test
+  (:require [applied-science.hubble :as ah]))
+
+(def test-data (map hash-map
+                      (repeat :a)
+                      (range 1 1000)
+                      (repeat :b)
+                      (repeatedly #(+ 25 (* 50 (Math/random))))))
+;; Plot vega lite spec
+;; will create default frame and redraw every new chart in it
+(plot-vega-lite!
+ {:data {:values test-data}
+  :mark \"line\"
+  :encoding {:x {:field :a :type \"ordinal\" :axis {\"labelAngle\" 0}},
+             :y {:field :b :type \"quantitative\"}}})
+             
+;; Verify svg string of vega lite lib before drawing
+(vega-lite-spec->svg
+ {:data {:values test-data}
+  :mark \"line\"
+  :encoding {:x {:field :a :type \"ordinal\" :axis {\"labelAngle\" 0}},
+             :y {:field :b :type \"quantitative\"}}})
+
+;; Plot multiple charts at the same time
+(defonce plot1 (make-svg-window {:title \"Stacked\"}))
+(plot-vega! plot1 (slurp (io/resource \"stacked.bar.vg.json\")))
+
+(def plot2 (make-svg-window {:title \"Bar\"}))
+(plot-vega! plot2 (slurp (io/resource \"bar.vg.json\")))
+  "
+
   (:require [seesaw.core :as see]
             [jsonista.core :as json]
             [applied-science.darkstar :as ds]
@@ -45,9 +77,9 @@
 (defn show-svg!
   ([svg-str] (show-svg! (default-inst) svg-str))
   ([inst svg-str]
-   (let [svg-canvas   ^org.apache.batik.swing.JSVGCanvas (canvas inst)
-         parser-class  (org.apache.batik.util.XMLResourceDescriptor/getXMLParserClassName)
-         doc-factory   (org.apache.batik.anim.dom.SAXSVGDocumentFactory. parser-class)
+   (let [svg-canvas ^org.apache.batik.swing.JSVGCanvas (canvas inst)
+         parser-class (org.apache.batik.util.XMLResourceDescriptor/getXMLParserClassName)
+         doc-factory (org.apache.batik.anim.dom.SAXSVGDocumentFactory. parser-class)
          string-reader (java.io.StringReader. svg-str)
          svg-document (.createDocument doc-factory "" string-reader)]
      (.setSVGDocument svg-canvas svg-document)
@@ -62,23 +94,126 @@
      (.repaint)
      (.setAlwaysOnTop true))))
 
+(defn vega-spec->svg
+  "Converts a Vega specification (Clojure map) to an SVG string.
+   
+   Args:
+     spec - A Clojure map representing a Vega visualization specification
+   
+   Returns:
+     SVG string representation of the visualization
+   
+   Example:
+     (vega-spec->svg {:$schema \"https://vega.github.io/schema/vega/v5.json\" 
+                      :width 400 :height 200 ...})"
+  [spec]
+  (ds/vega-spec->svg (json/write-value-as-string spec)))
+(defn vega-lite-spec->svg
+  "Converts a Vega-Lite specification (Clojure map) to an SVG string.
+   
+   Args:
+     spec - A Clojure map representing a Vega-Lite visualization specification
+   
+   Returns:
+     SVG string representation of the visualization
+   
+   Example:
+     (vega-lite-spec->svg {:$schema \"https://vega.github.io/schema/vega-lite/v5.json\" 
+                           :mark \"bar\" ...})"
+  [spec]
+  (ds/vega-lite-spec->svg (json/write-value-as-string spec)))
+
 (defn plot-vega!
+  "Displays a Vega visualization in a Swing window.
+   Creates or reuses a default window instance and keeps it on top.
+   
+   Args:
+     spec - Vega specification map
+     inst - (optional) window instance to use, defaults to (default-inst)
+   
+   Returns:
+     The window instance displaying the visualization
+   
+   Side-effects:
+     Opens/updates a Swing window and keeps it on top
+   
+   Example:
+     (plot-vega! {:$schema \"https://vega.github.io/schema/vega/v5.json\" 
+                  :width 400 :height 200 
+                  :data [{:name \"table\" :values [...]}]
+                  :marks [...]})"
   ([spec] (plot-vega! (default-inst) spec))
   ([inst spec]
-   (show-svg! inst (ds/vega-spec->svg (json/write-value-as-string spec)))
+   (show-svg! inst (vega-spec->svg spec))
    (keep-on-top! inst)))
 
 (defn plot-vega-lite!
+  "Displays a Vega-Lite visualization in a Swing window.
+   Creates or reuses a default window instance and keeps it on top.
+   
+   Args:
+     spec - Vega-Lite specification map  
+     inst - (optional) window instance to use, defaults to (default-inst)
+   
+   Returns:
+     The window instance displaying the visualization
+   
+   Side-effects:
+     Opens/updates a Swing window and keeps it on top
+   
+   Example:
+     (plot-vega-lite! {:$schema \"https://vega.github.io/schema/vega-lite/v5.json\" 
+                       :mark \"bar\"
+                       :data {:values [{:a \"A\" :b 28} {:a \"B\" :b 55}]}
+                       :encoding {:x {:field \"a\" :type \"ordinal\"}
+                                  :y {:field \"b\" :type \"quantitative\"}}})"
   ([spec] (plot-vega-lite! (default-inst) spec))
   ([inst spec]
-   (show-svg! inst (ds/vega-lite-spec->svg (json/write-value-as-string spec)))
+   (show-svg! inst (vega-lite-spec->svg spec))
    (keep-on-top! inst)))
 
-(defn spit-vega! [fpath spec]
-  (spit fpath (ds/vega-spec->svg (json/write-value-as-string spec))))
+(defn spit-vega!
+  "Saves a Vega visualization as an SVG file to disk.
+   
+   Args:
+     fpath - File path where to save the SVG
+     spec - Vega specification map
+   
+   Returns:
+     nil
+   
+   Side-effects:
+     Writes an SVG file to the specified path
+   
+   Example:
+     (spit-vega! \"charts/my-chart.svg\" 
+                 {:$schema \"https://vega.github.io/schema/vega/v5.json\" 
+                  :width 400 :height 200 ...})"
+  [fpath spec]
+  (spit fpath (vega-spec->svg spec)))
 
-(defn spit-vega-lite! [fpath spec]
-  (spit fpath (ds/vega-lite-spec->svg (json/write-value-as-string spec))))
+(defn spit-vega-lite!
+  "Saves a Vega-Lite visualization as an SVG file to disk.
+   
+   Args:
+     fpath - File path where to save the SVG
+     spec - Vega-Lite specification map
+   
+   Returns:
+     nil
+   
+   Side-effects:
+     Writes an SVG file to the specified path
+   
+   Example:
+     (spit-vega-lite! \"charts/my-chart.svg\" 
+                      {:$schema \"https://vega.github.io/schema/vega-lite/v5.json\" 
+                       :mark \"bar\"
+                       :data {:values [{:a \"A\" :b 28}]}
+                       :encoding {:x {:field \"a\" :type \"ordinal\"}
+                                  :y {:field \"b\" :type \"quantitative\"}}})"
+  [fpath spec]
+  (spit fpath (vega-lite-spec->svg spec)))
 
 (comment
 
@@ -86,12 +221,10 @@
 
   (def plot1 (make-svg-window {:title "Stacked"}))
   (show-svg! plot1 (ds/vega-spec->svg (slurp (io/resource "stacked.bar.vg.json"))))
-
   (keep-on-top! plot1)
 
   (def plot2 (make-svg-window {:title "Stacked"}))
-  (plot-vega-lite!
-   plot2
+  (vega-lite-spec->svg
    {:data {:values (map hash-map
                         (repeat :a)
                         (range 1 1000)
@@ -117,3 +250,4 @@
 ;;        t.transcode(input, output);
 ;;        ostream.flush();
 ;;        ostream.close();
+
