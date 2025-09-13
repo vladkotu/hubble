@@ -9,7 +9,7 @@ We have not yet released to Clojars, so we recommended you use deps.edn:
 
 ``` clojure
 applied-science/hubble {:git/url "https://github.com/vladkotu/hubble"
-                        :sha "a541bda15464cc2b2f77e56863a172828b0d7808"}
+                        :sha "c792cff28e42f606e2a26b7c621161284d05fb14"}
 ```
 
 ## Usage
