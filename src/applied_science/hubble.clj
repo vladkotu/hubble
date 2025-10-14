@@ -94,6 +94,19 @@
      (.repaint)
      (.setAlwaysOnTop true))))
 
+(defn vega-spec->json
+  "Converts a Vega specification (Clojure map) to an JSON string.
+   
+   Args​
+     spec - A Clojure map representing a Vega-Lite visualization specification
+   
+   Returns​
+     JSON string representation of the spec with schema version enforced "
+  [spec]
+  (-> spec
+      (assoc "$schema" "https://vega.github.io/schema/vega-lite/v5.10.1.json")
+      (json/write-value-as-string (json/object-mapper {:pretty true}))))
+
 (defn vega-spec->svg
   "Converts a Vega specification (Clojure map) to an SVG string.
    
@@ -104,24 +117,43 @@
      SVG string representation of the visualization
    
    Example:
-     (vega-spec->svg {:$schema \"https://vega.github.io/schema/vega/v5.json\" 
+     (vega-spec->svg {:$schema \"https://vega.github.io/schema/vega/v5.10.1.json\" 
                       :width 400 :height 200 ...})"
   [spec]
-  (ds/vega-spec->svg (json/write-value-as-string spec)))
+  (-> spec
+      (vega-spec->json)
+      (ds/vega-spec->svg)))
+
+
+(defn vega-lite-spec->json
+  "Converts a Vega-Lite specification (Clojure map) to an JSON string.
+   
+   Args​
+     spec - A Clojure map representing a Vega-Lite visualization specification
+   
+   Returns​
+     JSON string representation of the spec with schema version enforced "
+  [spec]
+  (-> spec
+      (assoc "$schema" "https://vega.github.io/schema/vega-lite/v4.10.1.json")
+      (json/write-value-as-string (json/object-mapper {:pretty true}))))
+
 (defn vega-lite-spec->svg
   "Converts a Vega-Lite specification (Clojure map) to an SVG string.
    
-   Args:
+   Args​
      spec - A Clojure map representing a Vega-Lite visualization specification
    
-   Returns:
+   Returns​
      SVG string representation of the visualization
    
-   Example:
-     (vega-lite-spec->svg {:$schema \"https://vega.github.io/schema/vega-lite/v5.json\" 
+   Example​
+     (vega-lite-spec->svg {:$schema \"https://vega.github.io/schema/vega-lite/v4.10.1.json\" 
                            :mark \"bar\" ...})"
   [spec]
-  (ds/vega-lite-spec->svg (json/write-value-as-string spec)))
+  (-> spec
+      (vega-lite-spec->json)
+      (ds/vega-lite-spec->svg)))
 
 (defn plot-vega!
   "Displays a Vega visualization in a Swing window.
@@ -224,17 +256,17 @@
   (keep-on-top! plot1)
 
   (def plot2 (make-svg-window {:title "Stacked"}))
-  (vega-lite-spec->svg
-   {:data {:values (map hash-map
-                        (repeat :a)
-                        (range 1 1000)
-                        (repeat :b)
-                        (repeatedly #(+ 25 (* 50 (Math/random)))))}
-    :mark "line",
-    :width 800
-    :height 600
-    :encoding {:x {:field :a, :type "ordinal", :axis {"labelAngle" 0}},
-               :y {:field :b, :type "quantitative"}}})
+  (println (vega-lite-spec->json
+    {:data {:values (map hash-map
+                         (repeat :a)
+                         (range 1 1000)
+                         (repeat :b)
+                         (repeatedly #(+ 25 (* 50 (Math/random)))))}
+     :mark "line",
+     :width 800
+     :height 600
+     :encoding {:x {:field :a, :type "ordinal", :axis {"labelAngle" 0}},
+                :y {:field :b, :type "quantitative"}}}))
 
   :end)
 
