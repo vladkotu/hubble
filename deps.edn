@@ -4,8 +4,8 @@
         seesaw/seesaw {:mvn/version "1.5.0"}
         org.apache.xmlgraphics/batik-dom {:mvn/version "1.12"}
         org.apache.xmlgraphics/batik-swing {:mvn/version "1.12"}
-        applied-science/darkstar {:git/url "https://github.com/appliedsciencestudio/darkstar/"
-                                  :sha "541a3ff36065c59e92fe6aa61e41a4385ba6f893"}}
+        org.graalvm.js/js {:mvn/version "25.0.0" :extension "pom"}
+        org.graalvm.js/js-scriptengine {:mvn/version "25.0.0"}}
  :aliases
  {:test {:extra-paths ["test"]
          :extra-deps {org.clojure/test.check {:mvn/version "0.10.0"}}}

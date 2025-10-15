@@ -104,7 +104,7 @@
      JSON string representation of the spec with schema version enforced "
   [spec]
   (-> spec
-      (assoc "$schema" "https://vega.github.io/schema/vega-lite/v5.10.1.json")
+      (assoc "$schema" "https://vega.github.io/schema/vega-lite/v4.10.1.json")
       (json/write-value-as-string (json/object-mapper {:pretty true}))))
 
 (defn vega-spec->svg
@@ -123,7 +123,6 @@
   (-> spec
       (vega-spec->json)
       (ds/vega-spec->svg)))
-
 
 (defn vega-lite-spec->json
   "Converts a Vega-Lite specification (Clojure map) to an JSON string.
@@ -256,17 +255,17 @@
   (keep-on-top! plot1)
 
   (def plot2 (make-svg-window {:title "Stacked"}))
-  (println (vega-lite-spec->json
-    {:data {:values (map hash-map
-                         (repeat :a)
-                         (range 1 1000)
-                         (repeat :b)
-                         (repeatedly #(+ 25 (* 50 (Math/random)))))}
-     :mark "line",
-     :width 800
-     :height 600
-     :encoding {:x {:field :a, :type "ordinal", :axis {"labelAngle" 0}},
-                :y {:field :b, :type "quantitative"}}}))
+  (show-svg! plot2 (vega-lite-spec->svg
+                    {:data {:values (map hash-map
+                                         (repeat :a)
+                                         (range 1 1000)
+                                         (repeat :b)
+                                         (repeatedly #(+ 25 (* 50 (Math/random)))))}
+                     :mark "line",
+                     :width 800
+                     :height 600
+                     :encoding {:x {:field :a, :type "ordinal", :axis {"labelAngle" 0}},
+                                :y {:field :b, :type "quantitative"}}}))
 
   :end)
 
