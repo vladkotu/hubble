@@ -51,6 +51,26 @@ applied-science/hubble {:git/url "https://github.com/vladkotu/hubble"
 
 ```
 
+## How to update vega and vega-lite
+
+vega update went smoth
+```
+wget -O resources/vega.js https://cdn.jsdelivr.net/npm/vega@6
+```
+
+vega-lite had some issues when loaded into graal-js env
+i had to customize build such that neede polyfill added and more dependencies
+included into final umd artifact
+
+```
+git clone https://github.com/vladkotu/vega-lite
+cd vega-lite
+npm i
+npm build:only
+cp build/vega-lite.js ../hubble/resources/
+```
+
+ 
 
 ## License
 
