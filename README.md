@@ -1,15 +1,19 @@
 # hubble
 
-A thin wrapper around Darkstar and Batik to allow easy viewing of Vega
-and Vega-lite graphs from the Clojure REPL.
+quick merge of [applied-sciense/darkstar](https://github.com/applied-science/darkstar) and [applied-sciense/hubble](https://github.com/applied-science/hubble)
+projects, allows to render vega and vega-lite charts
+both libs updated to 6.x versions
+
+```clojure
+(applied-science.darkstar/versions) ;; => {"vega" "6.2.0", "vegaLite" "6.4.1"}
+```
 
 ## Installation
 
-We have not yet released to Clojars, so we recommended you use deps.edn:
 
 ``` clojure
 applied-science/hubble {:git/url "https://github.com/vladkotu/hubble"
-                        :sha "c792cff28e42f606e2a26b7c621161284d05fb14"}
+                        :sha "f9e03db389c46b594635f1c857bc9ed65405ed1e"}
 ```
 
 ## Usage
@@ -19,10 +23,10 @@ applied-science/hubble {:git/url "https://github.com/vladkotu/hubble"
   (:require [applied-science.hubble :as ah]))
 
 (def test-data (map hash-map
-                      (repeat :a)
-                      (range 1 1000)
-                      (repeat :b)
-                      (repeatedly #(+ 25 (* 50 (Math/random))))))
+                    (repeat :a)
+                    (range 1 1000)
+                    (repeat :b)
+                    (repeatedly #(+ 25 (* 50 (Math/random))))))
 ;; Plot vega lite spec
 ;; will create default frame and redraw every new chart in it
 (plot-vega-lite!
@@ -45,26 +49,8 @@ applied-science/hubble {:git/url "https://github.com/vladkotu/hubble"
 (def plot2 (make-svg-window {:title "Bar"}))
 (plot-vega! plot2 (slurp (io/resource "bar.vg.json")))
 
-
 ```
 
-## TODO
-
-* Add Batik's PNG transcoder support to export PNGs of drawings.
-
-## Development 
-
-Build a deployable jar of this library:
-
-    $ clojure -A:jar
-
-Install it locally:
-
-    $ clojure -A:install
-
-Deploy it to Clojars -- needs `CLOJARS_USERNAME` and `CLOJARS_PASSWORD` environment variables:
-
-    $ clojure -A:deploy
 
 ## License
 
